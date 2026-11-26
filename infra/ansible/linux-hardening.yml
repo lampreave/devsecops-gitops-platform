@@ -1,0 +1,95 @@
+---
+- name: Harden Linux servers for container and Kubernetes operations
+  hosts: linux_nodes
+  become: true
+  vars:
+    ops_username: opsadmin
+    ssh_port: 22
+    allowed_tcp_ports:
+      - "22"
+      - "443"
+      - "6443"
+
+  tasks:
+    - name: Update apt package cache and apply security upgrades (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        upgrade: safe
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Install baseline security and operations packages
+      ansible.builtin.package:
+        name:
+          - auditd
+          - fail2ban
+          - unattended-upgrades
+          - ufw
+        state: present
+      when: ansible_facts["os_family"] == "Debian"
+
+    - name: Ensure dedicated non-root operations group exists
+      ansible.builtin.group:
+        name: "{{ ops_username }}"
+        state: present
+
+    - name: Ensure dedicated non-root operations user exists
+      ansible.builtin.user:
+        name: "{{ ops_username }}"
+        group: "{{ ops_username }}"
+        shell: /bin/bash
+        create_home: true
+        state: present
+
+    - name: Deploy hardened SSH daemon drop-in configuration
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/99-hardening.conf
+        owner: root
+        group: root
+        mode: "0600"
+        validate: /usr/sbin/sshd -t -f %s
+        content: |
+          Port {{ ssh_port }}
+          PermitRootLogin no
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+          PubkeyAuthentication yes
+          X11Forwarding no
+          MaxAuthTries 3
+          ClientAliveInterval 300
+          ClientAliveCountMax 2
+      notify: Restart sshd
+
+    - name: Apply kernel network hardening parameters via sysctl
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-k8s-security.conf
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          net.ipv4.conf.all.rp_filter = 1
+          net.ipv4.conf.default.rp_filter = 1
+          net.ipv4.conf.all.accept_redirects = 0
+          net.ipv4.conf.all.send_redirects = 0
+          net.ipv4.tcp_syncookies = 1
+      notify: Reload sysctl
+
+    - name: Ensure auditd and fail2ban services are enabled and running
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - auditd
+        - fail2ban
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+
+    - name: Reload sysctl
+      ansible.builtin.command:
+        cmd: sysctl --system
+      changed_when: true

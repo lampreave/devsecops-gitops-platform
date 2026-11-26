@@ -1,0 +1,53 @@
+name: OWASP ZAP Baseline DAST
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/dast-owasp-zap.yml"
+  workflow_dispatch:
+
+jobs:
+  zap-baseline:
+    name: Dynamic Application Security Testing (OWASP ZAP)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build and start ephemeral demo-service container
+        run: |
+          docker build -t demo-service:dast -f app/Dockerfile app
+          docker run -d --name demo-dast -p 127.0.0.1:8080:8080 demo-service:dast
+          for i in $(seq 1 15); do
+            if curl -sf http://127.0.0.1:8080/healthz; then
+              echo "Service is healthy"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run OWASP ZAP Baseline scan
+        run: |
+          mkdir -p zap-output
+          chmod 777 zap-output
+          docker run --rm --network host \
+            -v "${{ github.workspace }}/zap-output:/zap/wrk:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py \
+            -t http://127.0.0.1:8080 \
+            -r zap-report.html \
+            -I
+
+      - name: Stop ephemeral container
+        if: always()
+        run: docker rm -f demo-dast || true
+
+      - name: Upload OWASP ZAP HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-baseline-report
+          path: zap-output/zap-report.html
+          retention-days: 14

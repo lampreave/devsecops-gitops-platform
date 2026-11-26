@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: demo-service-envs
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - list:
+        elements:
+          - env: dev
+            namespace: demo-dev
+            valuesFile: values-dev.yaml
+            autoSync: "true"
+          - env: prod
+            namespace: demo-prod
+            valuesFile: values-prod.yaml
+            autoSync: "false"
+  template:
+    metadata:
+      name: "demo-service-{{.env}}"
+      labels:
+        environment: "{{.env}}"
+        managed-by: argocd
+    spec:
+      project: platform-services
+      source:
+        repoURL: https://github.com/lampreave/devsecops-gitops-platform.git
+        targetRevision: main
+        path: charts/demo-service
+        helm:
+          valueFiles:
+            - values.yaml
+            - "{{.valuesFile}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 3
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+  templatePatch: |
+    {{- if eq .autoSync "true" }}
+    spec:
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+    {{- end }}

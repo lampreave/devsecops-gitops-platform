@@ -1,0 +1,35 @@
+name: Platform DevSecOps & GitOps Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+
+jobs:
+  devsecops-ci:
+    name: App CI & DevSecOps Gates
+    uses: ./.github/workflows/reusable-devsecops-ci.yml
+    with:
+      image_name: ghcr.io/lampreave/devsecops-gitops-platform/demo-service
+      dockerfile_path: app/Dockerfile
+      context_path: app
+      block_on_vulnerabilities: true
+      push_image: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+  helm-and-gitops:
+    name: Helm & ArgoCD Validation
+    uses: ./.github/workflows/reusable-helm-gitops.yml
+    with:
+      chart_path: charts/demo-service
+      gitops_path: gitops
+
+  iac-and-ops:
+    name: Terraform & Ansible Security Checks
+    uses: ./.github/workflows/reusable-iac-ops.yml

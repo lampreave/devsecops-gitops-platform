@@ -1,0 +1,8 @@
+# Default owner for all platform, security, and GitOps changes
+* @lampreave
+
+# Require explicit platform review for CI/CD gates, GitOps, and IaC
+/.github/workflows/ @lampreave
+/gitops/ @lampreave
+/infra/ @lampreave
+/charts/ @lampreave

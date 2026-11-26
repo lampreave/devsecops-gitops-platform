@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: demo-service-slo-alerts
+  namespace: demo-prod
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: demo-service.availability
+      rules:
+        - alert: DemoServiceHighErrorRate
+          expr: |
+            (
+              sum(rate(demo_service_http_requests_total{status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(demo_service_http_requests_total[5m])), 1)
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            service: demo-service
+          annotations:
+            summary: "demo-service 5xx error rate exceeds 5%"
+            description: "More than 5% of HTTP requests returned 5xx over the last 5 minutes."
+            runbook_url: "https://github.com/lampreave/devsecops-gitops-platform/blob/main/docs/runbooks/argocd-rollback.md"
+
+        - alert: DemoServicePodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{namespace="demo-prod", container="demo-service"}[15m]) >= 3
+          for: 2m
+          labels:
+            severity: warning
+            service: demo-service
+          annotations:
+            summary: "demo-service pod restarting repeatedly"
+            description: "Container demo-service restarted 3+ times in 15 minutes."
+            runbook_url: "https://github.com/lampreave/devsecops-gitops-platform/blob/main/docs/runbooks/kubernetes-crashloop-triage.md"
+
+        - alert: DemoServiceTargetDown
+          expr: up{job="demo-service"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            service: demo-service
+          annotations:
+            summary: "demo-service scrape target is unreachable"
+            description: "Prometheus cannot scrape /metrics from demo-service for 2 consecutive minutes."

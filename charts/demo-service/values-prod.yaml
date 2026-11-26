@@ -1,0 +1,31 @@
+replicaCount: 3
+
+image:
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+env:
+  appEnv: prod
+  logLevel: INFO
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+serviceMonitor:
+  enabled: true
+  interval: 15s

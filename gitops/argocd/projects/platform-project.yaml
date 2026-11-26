@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: platform-services
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Scoped GitOps project enforcing repo and namespace boundaries for platform workloads.
+  sourceRepos:
+    - https://github.com/lampreave/devsecops-gitops-platform.git
+  destinations:
+    - namespace: demo-dev
+      server: https://kubernetes.default.svc
+    - namespace: demo-prod
+      server: https://kubernetes.default.svc
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange

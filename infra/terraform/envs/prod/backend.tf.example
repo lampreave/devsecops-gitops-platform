@@ -1,0 +1,10 @@
+# Example remote state configuration (copy to backend.tf with your real S3 bucket & DynamoDB lock table)
+terraform {
+  backend "s3" {
+    bucket         = "REPLACE_WITH_YOUR_TFSTATE_BUCKET"
+    key            = "devsecops-platform/prod/terraform.tfstate"
+    region         = "ca-central-1"
+    dynamodb_table = "REPLACE_WITH_YOUR_TF_LOCK_TABLE"
+    encrypt        = true
+  }
+}

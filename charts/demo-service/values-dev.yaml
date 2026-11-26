@@ -1,0 +1,14 @@
+replicaCount: 1
+
+image:
+  tag: "1.0.0"
+
+env:
+  appEnv: dev
+  logLevel: DEBUG
+
+autoscaling:
+  enabled: false
+
+podDisruptionBudget:
+  enabled: false

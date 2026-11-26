@@ -1,0 +1,65 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/lampreave/devsecops-gitops-platform/demo-service
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+serviceAccount:
+  create: true
+  automountServiceAccountToken: false
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 10001
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+env:
+  appEnv: dev
+  appVersion: "1.0.0"
+  logLevel: INFO
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 250m
+    memory: 128Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 75
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  ingressNamespaceSelector:
+    kubernetes.io/metadata.name: ingress-nginx
+
+serviceMonitor:
+  enabled: false
+  interval: 30s
+  scrapeTimeout: 10s

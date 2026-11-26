@@ -1,0 +1,46 @@
+{
+  "title": "Demo Service - Availability & SRE Overview",
+  "uid": "demo-service-sre",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": ["devsecops", "gitops", "sre", "demo-service"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Service Uptime (seconds)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "max(demo_service_uptime_seconds)",
+          "legendFormat": "uptime"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "HTTP Request Rate by Status",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum by (status) (rate(demo_service_http_requests_total[5m]))",
+          "legendFormat": "HTTP {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Pod Restarts (15m window)",
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "increase(kube_pod_container_status_restarts_total{container=\"demo-service\"}[15m])",
+          "legendFormat": "{{pod}}"
+        }
+      ]
+    }
+  ]
+}

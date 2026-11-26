@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Helm & K8s local artifacts
+*.tgz
+kubeconfig
+
+# Reports & OS
+*.log
+.DS_Store
+zap-report.*
+sbom*.json
