@@ -81,7 +81,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint Dockerfile with Hadolint
-        uses: hadolint/hadolint-action@v3.1.0
+        uses: hadolint/hadolint-action@v3.5.0
         with:
           dockerfile: ${{ inputs.dockerfile_path }}
           config: .hadolint.yaml
@@ -98,7 +98,7 @@ jobs:
           tags: ${{ inputs.image_name }}:ci-${{ github.sha }}
 
       - name: Generate CycloneDX SBOM (Syft)
-        uses: anchore/sbom-action@v0.17.8
+        uses: anchore/sbom-action@v0.24.4
         with:
           image: ${{ inputs.image_name }}:ci-${{ github.sha }}
           format: cyclonedx-json
@@ -113,7 +113,7 @@ jobs:
           retention-days: 14
 
       - name: Run Trivy image vulnerability gate
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ inputs.image_name }}:ci-${{ github.sha }}
           format: table
