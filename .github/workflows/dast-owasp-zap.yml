@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Build and start ephemeral demo-service container
         run: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload OWASP ZAP HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: owasp-zap-baseline-report
           path: zap-output/zap-report.html
